@@ -1,1 +1,1 @@
-# sanity-nextjs-landing-pages-studio
+# koydol-full-website-studio

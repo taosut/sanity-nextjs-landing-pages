@@ -1,4 +1,4 @@
-const withCSS = require('@zeit/next-css')
+const path = require('path')
 const client = require('./client')
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -6,9 +6,10 @@ const query = `
 {
   "routes": *[_type == "route"] {
     ...,
+    "slug":page->pageSlug,
     disallowRobot,
     includeInSitemap,
-    page->{
+    pagesList->{
       _id,
       title,
       _createdAt,
@@ -29,26 +30,32 @@ const reduceRoutes = (obj, route) => {
     disallowRobot,
     _createdAt,
     _updatedAt,
-    page: '/LandingPage'
+    page: '/'
   }
   return obj
 }
 
-module.exports = withCSS({
-  cssModules: true,
-  cssLoaderOptions: {
-    importLoaders: 1,
-    localIdentName: isProduction ? '[hash:base64:5]' : '[name]__[local]___[hash:base64:5]'
-  },
+module.exports = {
   exportPathMap: function () {
-    return client.fetch(query).then(res => {
+    return client.fetch(query).then((res) => {
       const {routes = []} = res
       const nextRoutes = {
         // Routes imported from sanity
-        ...routes.filter(({slug}) => slug.current).reduce(reduceRoutes, {}),
-        '/custom-page': {page: '/CustomPage'}
+        ...routes
+          .filter(({slug}) => {
+            return slug?.current
+          })
+          .reduce(reduceRoutes, {}),
+        '/': {page: '/'}
       }
       return nextRoutes
     })
+  },
+  images: {
+    loader: 'imgix', // remove this field on desctop
+    domains: ['cdn.sanity.io']
+  },
+  sassOptions: {
+    includePaths: [path.join(__dirname, 'styles')]
   }
-})
+}
